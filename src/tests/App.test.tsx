@@ -12,128 +12,117 @@ jest.mock("../callApi", () => ({
 
 describe("App Component", () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        jest.clearAllMocks(); // Reset mocks before each test
     });
 
-    it("renders the App component with initial elements", () => {
+    it("renders the initial UI elements", () => {
         render(<App />);
 
-        // Check for the input and button
-        const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check uniqueness/i);
-
-        expect(inputElement).toBeInTheDocument();
-        expect(checkButton).toBeInTheDocument();
+        // Check that the header and input elements are rendered
+        expect(screen.getByText(/TetraPak/i)).toBeInTheDocument();
+        expect(screen.getByText(/Frontend Code Test/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Enter desired username/i)).toBeInTheDocument();
+        expect(screen.getByText(/Check uniqueness/i)).toBeInTheDocument();
     });
 
     it("displays 'Available' when username is available", async () => {
-        // Mock `checkUsername` to return available username
+        // Mock the checkUsername API to return an available username
         (checkUsername as jest.Mock).mockResolvedValue({ available: true });
 
         render(<App />);
 
-        const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check uniqueness/i);
-
-        // Simulate typing into the input
-        fireEvent.change(inputElement, { target: { value: "unique_username" } });
-
-        // Simulate clicking the check button
-        fireEvent.click(checkButton);
-
-        // Wait for the API call to complete
-        await waitFor(() => {
-            const availableMessage = screen.getByText(/available/i);
-            expect(availableMessage).toBeInTheDocument();
+        // Simulate typing into the input field
+        fireEvent.change(screen.getByPlaceholderText(/Enter desired username/i), {
+            target: { value: "unique_username" },
         });
 
-        // Check that the Register button is visible
-        const registerButton = screen.getByText(/register/i);
-        expect(registerButton).toBeInTheDocument();
+        // Simulate clicking the "Check uniqueness" button
+        fireEvent.click(screen.getByText(/Check uniqueness/i));
+
+        // Wait for the API call and check if "Available" is displayed
+        await waitFor(() => {
+            expect(screen.getByText(/Available/i)).toBeInTheDocument();
+        });
+
+        // Ensure the register button appears when the username is available
+        expect(screen.getByText(/Register/i)).toBeInTheDocument();
     });
 
     it("displays 'Not available' when username is not available", async () => {
-        // Mock `checkUsername` to return unavailable username
+        // Mock the checkUsername API to return an unavailable username
         (checkUsername as jest.Mock).mockResolvedValue({ available: false });
 
         render(<App />);
 
-        const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check uniqueness/i);
-
-        // Simulate typing into the input
-        fireEvent.change(inputElement, { target: { value: "taken_username" } });
-
-        // Simulate clicking the check button
-        fireEvent.click(checkButton);
-
-        // Wait for the API call to complete
-        await waitFor(() => {
-            const notAvailableMessage = screen.getByText(/not available/i);
-            expect(notAvailableMessage).toBeInTheDocument();
+        // Simulate typing into the input field
+        fireEvent.change(screen.getByPlaceholderText(/Enter desired username/i), {
+            target: { value: "taken_username" },
         });
 
-        // Check that the Register button is not rendered
-        expect(screen.queryByText(/register/i)).toBeNull();
+        // Simulate clicking the "Check uniqueness" button
+        fireEvent.click(screen.getByText(/Check uniqueness/i));
+
+        // Wait for the API call and check if "Not available" is displayed
+        await waitFor(() => {
+            expect(screen.getByText(/Not available/i)).toBeInTheDocument();
+        });
+
+        // Ensure the register button does not appear
+        expect(screen.queryByText(/Register/i)).not.toBeInTheDocument();
     });
 
     it("registers the username when it is available", async () => {
-        // Mock `checkUsername` to return available and `registerUser` to succeed
+        // Mock the checkUsername API to return available and the registerUser API to succeed
         (checkUsername as jest.Mock).mockResolvedValue({ available: true });
         (registerUser as jest.Mock).mockResolvedValue({ success: true });
 
         render(<App />);
 
-        const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check uniqueness/i);
-
-        // Simulate typing into the input
-        fireEvent.change(inputElement, { target: { value: "valid_username" } });
-
-        // Simulate clicking the check button
-        fireEvent.click(checkButton);
-
-        // Wait for the API call to complete
-        await waitFor(() => {
-            const availableMessage = screen.getByText(/available/i);
-            expect(availableMessage).toBeInTheDocument();
+        // Simulate typing into the input field
+        fireEvent.change(screen.getByPlaceholderText(/Enter desired username/i), {
+            target: { value: "valid_username" },
         });
 
-        // Simulate clicking the Register button
-        const registerButton = screen.getByText(/register/i);
-        fireEvent.click(registerButton);
+        // Simulate clicking the "Check uniqueness" button
+        fireEvent.click(screen.getByText(/Check uniqueness/i));
 
-        // Ensure registerUser was called
+        // Wait for the API call and check if "Available" is displayed
+        await waitFor(() => {
+            expect(screen.getByText(/Available/i)).toBeInTheDocument();
+        });
+
+        // Simulate clicking the "Register" button
+        fireEvent.click(screen.getByText(/Register/i));
+
+        // Ensure the registerUser function is called with the correct username
         await waitFor(() => {
             expect(registerUser).toHaveBeenCalledWith("valid_username");
         });
 
-        // After registration, ensure input is cleared
-        expect(inputElement).toHaveValue("");
+        // Ensure the input is cleared after successful registration
+        expect(screen.getByPlaceholderText(/Enter desired username/i)).toHaveValue("");
     });
 
-    it("does not register the username if not available", async () => {
-        // Mock `checkUsername` to return unavailable username
+    it("does not register the username if it is not available", async () => {
+        // Mock the checkUsername API to return unavailable username
         (checkUsername as jest.Mock).mockResolvedValue({ available: false });
 
         render(<App />);
 
-        const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check uniqueness/i);
-
-        // Simulate typing into the input
-        fireEvent.change(inputElement, { target: { value: "invalid_username" } });
-
-        // Simulate clicking the check button
-        fireEvent.click(checkButton);
-
-        // Wait for the API call to complete
-        await waitFor(() => {
-            const notAvailableMessage = screen.getByText(/not available/i);
-            expect(notAvailableMessage).toBeInTheDocument();
+        // Simulate typing into the input field
+        fireEvent.change(screen.getByPlaceholderText(/Enter desired username/i), {
+            target: { value: "taken_username" },
         });
 
-        // Ensure that the Register button is not visible
-        expect(screen.queryByText(/register/i)).toBeNull();
+        // Simulate clicking the "Check uniqueness" button
+        fireEvent.click(screen.getByText(/Check uniqueness/i));
+
+        // Wait for the API call and check if "Not available" is displayed
+        await waitFor(() => {
+            expect(screen.getByText(/Not available/i)).toBeInTheDocument();
+        });
+
+        // Ensure the register button is not rendered
+        expect(screen.queryByText(/Register/i)).not.toBeInTheDocument();
     });
 });
