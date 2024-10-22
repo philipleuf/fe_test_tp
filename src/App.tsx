@@ -8,6 +8,7 @@ const App: React.FC = () => {
   const [availability, setAvailability] = useState<string | null>(null);
 
   const validateUsername = async (username: string) => {
+    setAvailability(null); // reset on every click
     const response: CheckUsernameResponse | undefined = await checkUsername(username);
     setAvailability(response?.available ? "Available" : "Not available");
   };
@@ -18,7 +19,7 @@ const App: React.FC = () => {
       setAvailability(null);
       setUsername("");
     }
-  }
+  };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value);
@@ -26,11 +27,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="app">
+    <div className="container">
       <h1>TetraPak</h1>
       <h2>Frontend Code Test</h2>
       <main>🧙‍♂️ Wizardry 🧙‍♂️</main>
-      <div className="app">
+      <div>
         <h1>Find your uniqueness</h1>
         <input
           type="text"
@@ -38,7 +39,7 @@ const App: React.FC = () => {
           onChange={handleChange}
           placeholder="Enter desired username"
         />
-        <button onClick={() => validateUsername(username)}>Check unqiueness</button>
+        <button onClick={() => validateUsername(username)}>Check uniqueness</button>
         {availability && (
           <p className={availability === "Available" ? "available" : "not-available"}>
             {availability}
