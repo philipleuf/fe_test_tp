@@ -1,15 +1,17 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import App from "../App"; // Adjust the path as necessary
-import { checkUsername, registerUser } from "../callApi"; // Mocking these API calls
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import App from "../App";
+import { checkUsername, registerUser } from "../callApi";
 
 // Mock the API calls
-jest.mock("../callApi");
+jest.mock("../callApi", () => ({
+    checkUsername: jest.fn(),
+    registerUser: jest.fn(),
+}));
 
 describe("App Component", () => {
     beforeEach(() => {
-        // Clear mock history before each test
         jest.clearAllMocks();
     });
 
@@ -18,7 +20,7 @@ describe("App Component", () => {
 
         // Check for the input and button
         const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check unqiueness/i);
+        const checkButton = screen.getByText(/check uniqueness/i);
 
         expect(inputElement).toBeInTheDocument();
         expect(checkButton).toBeInTheDocument();
@@ -31,7 +33,7 @@ describe("App Component", () => {
         render(<App />);
 
         const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check unqiueness/i);
+        const checkButton = screen.getByText(/check uniqueness/i);
 
         // Simulate typing into the input
         fireEvent.change(inputElement, { target: { value: "unique_username" } });
@@ -41,10 +43,13 @@ describe("App Component", () => {
 
         // Wait for the API call to complete
         await waitFor(() => {
-            // Check if "Available" text is rendered
             const availableMessage = screen.getByText(/available/i);
             expect(availableMessage).toBeInTheDocument();
         });
+
+        // Check that the Register button is visible
+        const registerButton = screen.getByText(/register/i);
+        expect(registerButton).toBeInTheDocument();
     });
 
     it("displays 'Not available' when username is not available", async () => {
@@ -54,7 +59,7 @@ describe("App Component", () => {
         render(<App />);
 
         const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check unqiueness/i);
+        const checkButton = screen.getByText(/check uniqueness/i);
 
         // Simulate typing into the input
         fireEvent.change(inputElement, { target: { value: "taken_username" } });
@@ -64,13 +69,15 @@ describe("App Component", () => {
 
         // Wait for the API call to complete
         await waitFor(() => {
-            // Check if "Not available" text is rendered
             const notAvailableMessage = screen.getByText(/not available/i);
             expect(notAvailableMessage).toBeInTheDocument();
         });
+
+        // Check that the Register button is not rendered
+        expect(screen.queryByText(/register/i)).toBeNull();
     });
 
-    it("registers the username when available", async () => {
+    it("registers the username when it is available", async () => {
         // Mock `checkUsername` to return available and `registerUser` to succeed
         (checkUsername as jest.Mock).mockResolvedValue({ available: true });
         (registerUser as jest.Mock).mockResolvedValue({ success: true });
@@ -78,30 +85,30 @@ describe("App Component", () => {
         render(<App />);
 
         const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check unqiueness/i);
+        const checkButton = screen.getByText(/check uniqueness/i);
 
         // Simulate typing into the input
-        fireEvent.change(inputElement, { target: { value: "unique_username" } });
+        fireEvent.change(inputElement, { target: { value: "valid_username" } });
 
         // Simulate clicking the check button
         fireEvent.click(checkButton);
 
-        // Wait for the "Available" message to appear
+        // Wait for the API call to complete
         await waitFor(() => {
             const availableMessage = screen.getByText(/available/i);
             expect(availableMessage).toBeInTheDocument();
         });
 
-        // Simulate clicking the "Register" button
+        // Simulate clicking the Register button
         const registerButton = screen.getByText(/register/i);
         fireEvent.click(registerButton);
 
-        // Ensure registerUser is called
+        // Ensure registerUser was called
         await waitFor(() => {
-            expect(registerUser).toHaveBeenCalledWith("unique_username");
+            expect(registerUser).toHaveBeenCalledWith("valid_username");
         });
 
-        // Check that the input is cleared after registration
+        // After registration, ensure input is cleared
         expect(inputElement).toHaveValue("");
     });
 
@@ -112,10 +119,10 @@ describe("App Component", () => {
         render(<App />);
 
         const inputElement = screen.getByPlaceholderText(/enter desired username/i);
-        const checkButton = screen.getByText(/check unqiueness/i);
+        const checkButton = screen.getByText(/check uniqueness/i);
 
         // Simulate typing into the input
-        fireEvent.change(inputElement, { target: { value: "taken_username" } });
+        fireEvent.change(inputElement, { target: { value: "invalid_username" } });
 
         // Simulate clicking the check button
         fireEvent.click(checkButton);
@@ -126,7 +133,7 @@ describe("App Component", () => {
             expect(notAvailableMessage).toBeInTheDocument();
         });
 
-        // Ensure that the "Register" button is not visible
+        // Ensure that the Register button is not visible
         expect(screen.queryByText(/register/i)).toBeNull();
     });
 });

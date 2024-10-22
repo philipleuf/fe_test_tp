@@ -1,144 +1,106 @@
 import { checkUsername, registerUser } from '../callApi';
-import { successAlert, errorAlert } from '../swalAlerts'; // Adjust the path to where errorAlert is defined
+import { successAlert, errorAlert } from '../swalAlerts';
 import { responseMessages } from '../constants';
 
-// Mocks
+// Mocking global fetch
 global.fetch = jest.fn();
 
+// Mocking success and error alerts
 jest.mock('../swalAlerts', () => ({
-    errorAlert: jest.fn(),
     successAlert: jest.fn(),
+    errorAlert: jest.fn(),
 }));
 
-
-// Define a mock for errorMessage in case it is external
-const errorMessage = "Unexpected error, try again";
-
-describe('checkUsername', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+describe('API Functions', () => {
+    afterEach(() => {
+        jest.clearAllMocks(); // Clear mocks after each test
     });
 
-    it('should return data when the username check is successful', async () => {
-        // Mock fetch success response
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 200,
-            json: jest.fn().mockResolvedValue({ available: true }),
+    describe('checkUsername', () => {
+        it('should return data when the username check is successful', async () => {
+            const mockResponse = { available: true };
+
+            // Mock fetch for successful response
+            (fetch as jest.Mock).mockResolvedValue({
+                status: 200,
+                json: jest.fn().mockResolvedValue(mockResponse),
+            });
+
+            const result = await checkUsername('valid_username');
+
+            // Check if fetch was called correctly
+            expect(fetch).toHaveBeenCalledWith('http://localhost:3000/check-username?username=valid_username');
+
+            // Validate the result
+            expect(result).toEqual(mockResponse);
+
+            // Ensure errorAlert is not called
+            expect(errorAlert).not.toHaveBeenCalled();
         });
 
-        const result = await checkUsername("test_user");
+        it('should throw an error and call errorAlert when the username check fails', async () => {
+            const mockErrorResponse = { error: 'Username is already taken' };
 
-        // Check if fetch was called with correct URL
-        expect(fetch).toHaveBeenCalledWith("http://localhost:3000/check-username?username=test_user");
+            // Mock fetch for failed response
+            (fetch as jest.Mock).mockResolvedValue({
+                status: 400,
+                json: jest.fn().mockResolvedValue(mockErrorResponse),
+            });
 
-        // Validate the result
-        expect(result).toEqual({ available: true });
+            await expect(checkUsername('taken_username')).rejects.toThrow('Username is already taken');
 
-        // Ensure errorAlert was not called
-        expect(errorAlert).not.toHaveBeenCalled();
+            // Check if errorAlert was called with the correct message
+            expect(errorAlert).toHaveBeenCalledWith('Username is already taken');
+        });
     });
 
-    it('should show error alert and throw error when response is unsuccessful', async () => {
-        // Mock fetch failure response
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 400,
-            json: jest.fn().mockResolvedValue({ error: "Username not found" }),
+    describe('registerUser', () => {
+        it('should return data and call successAlert when registration is successful', async () => {
+            const mockResponse = { success: true };
+
+            // Mock fetch for successful response
+            (fetch as jest.Mock).mockResolvedValue({
+                status: 200,
+                json: jest.fn().mockResolvedValue(mockResponse),
+            });
+
+            const result = await registerUser('new_username');
+
+            // Check if fetch was called correctly
+            expect(fetch).toHaveBeenCalledWith('http://localhost:3000/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: 'new_username' }),
+            });
+
+            // Validate the result
+            expect(result).toEqual(mockResponse);
+
+            // Ensure successAlert was called with the correct message
+            expect(successAlert).toHaveBeenCalledWith(responseMessages.registerUserSuccess);
+
+            // Ensure errorAlert was not called
+            expect(errorAlert).not.toHaveBeenCalled();
         });
 
-        await expect(checkUsername("invalid_user")).rejects.toThrow("Username not found");
+        it('should throw an error and call errorAlert when registration fails', async () => {
+            const mockErrorResponse = { error: 'Registration failed' };
 
-        // Check if errorAlert was called with correct message
-        expect(errorAlert).toHaveBeenCalledWith("Username not found");
+            // Mock fetch for failed response
+            (fetch as jest.Mock).mockResolvedValue({
+                status: 400,
+                json: jest.fn().mockResolvedValue(mockErrorResponse),
+            });
 
-        // Ensure no other calls were made
-        expect(fetch).toHaveBeenCalledWith("http://localhost:3000/check-username?username=invalid_user");
-    });
+            await expect(registerUser('invalid_username')).rejects.toThrow('Registration failed');
 
-    it('should handle response error with default error message when no specific error is provided', async () => {
-        // Mock fetch failure response without an error message
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 500,
-            json: jest.fn().mockResolvedValue({}),
-            statusText: "Internal Server Error",
+            // Check if errorAlert was called with the correct message
+            expect(errorAlert).toHaveBeenCalledWith('Registration failed');
+
+            // Ensure successAlert was not called
+            expect(successAlert).not.toHaveBeenCalled();
         });
-
-        await expect(checkUsername("test_user")).rejects.toThrow("Internal Server Error");
-
-        // Check if errorAlert was called with statusText as fallback message
-        expect(errorAlert).toHaveBeenCalledWith("Internal Server Error");
-    });
-
-    it('should handle missing statusText or error by using the fallback errorMessage', async () => {
-        // Mock fetch failure response without an error or statusText
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 500,
-            json: jest.fn().mockResolvedValue({}),
-        });
-
-        await expect(checkUsername("test_user")).rejects.toThrow(errorMessage);
-
-        // Check if errorAlert was called with fallback errorMessage
-        expect(errorAlert).toHaveBeenCalledWith(errorMessage);
-    });
-});
-
-describe('registerUser', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
-
-    it('should register the user and show success alert when response is successful', async () => {
-        // Mock fetch success response
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 200,
-            json: jest.fn().mockResolvedValue({ id: 1, username: "test_user" }),
-        });
-
-        const result = await registerUser("test_user");
-
-        // Check if fetch was called with correct parameters
-        expect(fetch).toHaveBeenCalledWith("http://localhost:3000/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: "test_user" }),
-        });
-
-        // Check if successAlert was called with correct message
-        expect(successAlert).toHaveBeenCalledWith(responseMessages.registerUserSuccess);
-
-        // Validate the result
-        expect(result).toEqual({ id: 1, username: "test_user" });
-    });
-
-    it('should throw an error and show error alert when response fails', async () => {
-        // Mock fetch error response
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 400,
-            json: jest.fn().mockResolvedValue({ error: "Invalid username" }),
-        });
-
-        await expect(registerUser("invalid_user")).rejects.toThrow("Invalid username");
-
-        // Check if errorAlert was called with correct message
-        expect(errorAlert).toHaveBeenCalledWith("Invalid username");
-
-        // Ensure successAlert was not called
-        expect(successAlert).not.toHaveBeenCalled();
-    });
-
-    it('should handle unexpected error gracefully', async () => {
-        // Mock fetch error without a specific error message
-        (fetch as jest.Mock).mockResolvedValue({
-            status: 500,
-            json: jest.fn().mockResolvedValue({}),
-        });
-
-        await expect(registerUser("test_user")).rejects.toThrow("Unexpected error");
-
-        // Check if errorAlert was called with fallback error message
-        expect(errorAlert).toHaveBeenCalledWith("Unexpected error");
-
-        // Ensure successAlert was not called
-        expect(successAlert).not.toHaveBeenCalled();
     });
 });

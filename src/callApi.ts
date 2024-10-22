@@ -2,15 +2,11 @@ import { CheckUsernameResponse, RegisterResponse } from "./types";
 import { successAlert, errorAlert } from "./swalAlerts";
 import { responseMessages } from "./constants";
 
+const API_BASE_URL = "http://localhost:3000";
 const errorMessage = "Unexpected error, try again";
 
-export const checkUsername = async (username: string) => {
-  const params = new URLSearchParams({ username });
-  const response = await fetch(
-    `http://localhost:3000/check-username?${params}`,
-  );
-  const data: CheckUsernameResponse = await response.json();
-
+const handleFetchResponse = async (response: Response) => {
+  const data = await response.json();
   if (response.status !== 200) {
     const errorMsg = data.error || response.statusText || errorMessage;
     errorAlert(errorMsg);
@@ -19,19 +15,22 @@ export const checkUsername = async (username: string) => {
   return data;
 };
 
-export const registerUser = async (username: string) => {
-  const response = await fetch("http://localhost:3000/register", {
+export const checkUsername = async (username: string): Promise<CheckUsernameResponse> => {
+  const params = new URLSearchParams({ username });
+  const response = await fetch(`${API_BASE_URL}/check-username?${params}`);
+  return handleFetchResponse(response);
+};
+
+export const registerUser = async (username: string): Promise<RegisterResponse> => {
+  const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ username }),
   });
-  const data: RegisterResponse = await response.json();
-  if (response.status !== 200) {
-    errorAlert(data?.error || "Unexpected error");
-    throw new Error(data.error || "Unexpected error");
-  }
+  const data: RegisterResponse = await handleFetchResponse(response);
+
   successAlert(responseMessages.registerUserSuccess);
   return data;
 };
