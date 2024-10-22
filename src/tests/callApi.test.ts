@@ -1,6 +1,5 @@
 import { checkUsername, registerUser } from '../callApi';
 import { successAlert, errorAlert } from '../swalAlerts';
-import { responseMessages } from '../constants';
 
 // Mocking global fetch
 global.fetch = jest.fn();
@@ -100,7 +99,7 @@ describe('API Functions', () => {
             expect(result).toEqual(mockResponse);
 
             // Ensure successAlert was called with the correct message
-            expect(successAlert).toHaveBeenCalledWith(responseMessages.registerUserSuccess);
+            expect(successAlert).toHaveBeenCalledWith("Successfully registered");
 
             // Ensure errorAlert was not called
             expect(errorAlert).not.toHaveBeenCalled();

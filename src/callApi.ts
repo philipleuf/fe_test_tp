@@ -1,6 +1,5 @@
 import { CheckUsernameResponse, RegisterResponse } from "./types";
 import { successAlert, errorAlert } from "./swalAlerts";
-import { responseMessages } from "./constants";
 
 const API_BASE_URL = "http://localhost:3000";
 const errorMessage = "Unexpected error, try again";
@@ -31,6 +30,6 @@ export const registerUser = async (username: string): Promise<RegisterResponse> 
   });
   const data: RegisterResponse = await handleFetchResponse(response);
 
-  successAlert(responseMessages.registerUserSuccess);
+  successAlert(data.message || "Successfully registered");
   return data;
 };
