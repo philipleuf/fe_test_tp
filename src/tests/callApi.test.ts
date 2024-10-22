@@ -38,8 +38,29 @@ describe('API Functions', () => {
             expect(errorAlert).not.toHaveBeenCalled();
         });
 
-        it('should throw an error and call errorAlert when the username check fails', async () => {
-            const mockErrorResponse = { error: 'Username is already taken' };
+        it('should return username is not available', async () => {
+            const mockResponse = { available: false };
+
+            // Mock fetch for successful response
+            (fetch as jest.Mock).mockResolvedValue({
+                status: 200,
+                json: jest.fn().mockResolvedValue(mockResponse),
+            });
+
+            const result = await checkUsername('taken_username');
+
+            // Check if fetch was called correctly
+            expect(fetch).toHaveBeenCalledWith('http://localhost:3000/check-username?username=taken_username');
+
+            // Validate the result
+            expect(result).toEqual(mockResponse);
+
+            // Ensure errorAlert is not called
+            expect(errorAlert).not.toHaveBeenCalled();
+        });
+
+        it('should throw an error and call errorAlert when the username is empty', async () => {
+            const mockErrorResponse = { error: 'Missing username' };
 
             // Mock fetch for failed response
             (fetch as jest.Mock).mockResolvedValue({
@@ -47,10 +68,10 @@ describe('API Functions', () => {
                 json: jest.fn().mockResolvedValue(mockErrorResponse),
             });
 
-            await expect(checkUsername('taken_username')).rejects.toThrow('Username is already taken');
+            await expect(checkUsername('')).rejects.toThrow('Missing username');
 
             // Check if errorAlert was called with the correct message
-            expect(errorAlert).toHaveBeenCalledWith('Username is already taken');
+            expect(errorAlert).toHaveBeenCalledWith('Missing username');
         });
     });
 
