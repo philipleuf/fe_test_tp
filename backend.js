@@ -4,7 +4,7 @@ import cors from "cors";
 const app = express();
 
 const SIMULATE_DELAY_MS = 100;
-const FAILURE_RATE = 0.5;
+const FAILURE_RATE = 0.6;
 
 app.use(cors({
   origin: 'localhost:5173',
