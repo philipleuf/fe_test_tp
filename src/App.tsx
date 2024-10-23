@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { checkUsername, registerUser } from "./callApi";
 import { CheckUsernameResponse, RegisterResponse } from "./interfaces";
 import Spinner from "./Spinner";
-import { errorAlert, successAlert } from "./swalAlerts";
+import { swalAlert } from "./swalAlert";
 import { USERNAMESTATUS } from "./constants";
 
 const App: React.FC = () => {
@@ -40,27 +40,27 @@ const App: React.FC = () => {
 
   // Handle username validation response
   const handleCheckUsernameResponse = (response: CheckUsernameResponse) => {
-    if (typeof response?.available === "boolean") {
-      if (response.available) {
-        setApiMessage(USERNAMESTATUS.AVAILABLE);
-        setShowRegisterButton(true);
-      } else {
-        setApiMessage(USERNAMESTATUS.NOT_AVAILABLE);
-      }
-    } else {
-      setApiMessage(response.toString());
+    if (response.error) {
+      setApiMessage(response.error);
       setShowRegisterButton(false);
+    }
+    if (typeof response.available === "boolean") {
+      const usernameAvailable = response.available === true;
+      setApiMessage(usernameAvailable ? USERNAMESTATUS.AVAILABLE : USERNAMESTATUS.NOT_AVAILABLE);
+      setShowRegisterButton(usernameAvailable);
     }
   };
 
   // Handle user registration response
   const handleRegisterResponse = (response: RegisterResponse) => {
-    if (response?.success) {
-      successAlert(response.message || "Successfully registered!");
+    if (response.error) {
+      swalAlert(false, response.error);
+    }
+    if (typeof response.success === "boolean") {
+      const registerSuccess = response.success === true;
+      if (registerSuccess) swalAlert(registerSuccess, response.message);
       clearValidation();
       setUsername(""); // Clear username after registration
-    } else {
-      errorAlert(response.message || "Error registering user");
     }
   };
 

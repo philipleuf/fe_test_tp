@@ -1,13 +1,13 @@
 import { CheckUsernameResponse, RegisterResponse } from "./interfaces";
-
 const API_BASE_URL = "http://localhost:3000";
-const errorMessage = "Unexpected error, try again";
 
 const handleFetchResponse = async (response: Response) => {
   const data = await response.json();
-  if (response.status !== 200) {
-    const errorMsg = data.error || response.statusText || errorMessage;
-    return errorMsg;
+  if (!response.ok) {
+    if (response.status === 400 || response.status === 503) {
+      return data;
+    }
+    throw new Error(response.statusText);
   }
   return data;
 };
@@ -26,7 +26,5 @@ export const registerUser = async (username: string): Promise<RegisterResponse> 
     },
     body: JSON.stringify({ username }),
   });
-  const data: RegisterResponse = await handleFetchResponse(response);
-
-  return data;
+  return handleFetchResponse(response);
 };
