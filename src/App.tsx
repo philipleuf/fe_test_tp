@@ -3,11 +3,7 @@ import { checkUsername, registerUser } from "./callApi";
 import { CheckUsernameResponse, RegisterResponse } from "./interfaces";
 import Spinner from "./Spinner";
 import { errorAlert, successAlert } from "./swalAlerts";
-
-enum USERNAMESTATUS {
-  AVAILABLE = "Available",
-  NOT_AVAILABLE = "Not available",
-}
+import { USERNAMESTATUS } from "./constants";
 
 const App: React.FC = () => {
   const [username, setUsername] = useState<string>("");
