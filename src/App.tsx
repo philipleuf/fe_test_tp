@@ -17,13 +17,19 @@ const App: React.FC = () => {
       clearValidation();
       return;
     }
-
     const debouncer = setTimeout(() => {
       validateUsername();
     }, 500);
 
     return () => clearTimeout(debouncer);
   }, [username]);
+
+  const validateUsername = async () => {
+    setValidating(true);
+    const response = await checkUsername(username);
+    setValidating(false);
+    handleCheckUsernameResponse(response);
+  };
 
   // Clear validation and reset relevant state
   const clearValidation = useCallback(() => {
@@ -41,9 +47,7 @@ const App: React.FC = () => {
       } else {
         setApiMessage(USERNAMESTATUS.NOT_AVAILABLE);
       }
-
     } else {
-
       setApiMessage(response.toString());
       setShowRegisterButton(false);
     }
@@ -58,13 +62,6 @@ const App: React.FC = () => {
     } else {
       errorAlert(response.message || "Error registering user");
     }
-  };
-
-  const validateUsername = async () => {
-    setValidating(true);
-    const response = await checkUsername(username);
-    setValidating(false);
-    handleCheckUsernameResponse(response);
   };
 
   const registerUsername = async () => {
