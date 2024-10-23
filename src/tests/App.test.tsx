@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 import App from "../App";
 import { checkUsername, registerUser } from "../callApi";
 import { USERNAMESTATUS } from "../constants";
