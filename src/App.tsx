@@ -38,8 +38,6 @@ const App: React.FC = () => {
 
   // Handle username validation response
   const handleCheckUsernameResponse = (response: CheckUsernameResponse) => {
-    console.log("response:: ", response);
-
     if (typeof response?.available === "boolean") {
       if (response.available) {
         setApiMessage(USERNAMESTATUS.AVAILABLE);
