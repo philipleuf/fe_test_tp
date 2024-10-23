@@ -1,10 +1,10 @@
 export interface CheckUsernameResponse {
-  available?: boolean;
+  available: boolean;
   error?: string;
 }
 
 export interface RegisterResponse {
-  success: boolean;
+  success?: boolean;
   message?: string;
   error?: string;
 }

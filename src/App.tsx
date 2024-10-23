@@ -1,28 +1,87 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { checkUsername, registerUser } from "./callApi";
-import { CheckUsernameResponse, RegisterResponse } from "./types";
+import { CheckUsernameResponse, RegisterResponse } from "./interfaces";
+import Spinner from "./Spinner";
+import { errorAlert, successAlert } from "./swalAlerts";
+
+enum USERNAMESTATUS {
+  AVAILABLE = "Available",
+  NOT_AVAILABLE = "Not available",
+}
 
 const App: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [availability, setAvailability] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>("");
+  const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [validating, setValidating] = useState<boolean>(false);
+  const [showRegisterButton, setShowRegisterButton] = useState<boolean>(false);
 
-  const validateUsername = async (username: string) => {
-    setAvailability(null); // reset on every click
-    const response: CheckUsernameResponse | undefined = await checkUsername(username);
-    setAvailability(response?.available ? "Available" : "Not available");
+  /** Real time search and validation of username with debounce */
+  useEffect(() => {
+    if (!username) {
+      clearValidation();
+      return;
+    }
+
+    const debouncer = setTimeout(() => {
+      validateUsername();
+    }, 500);
+
+    return () => clearTimeout(debouncer);
+  }, [username]);
+
+  // Clear validation and reset relevant state
+  const clearValidation = useCallback(() => {
+    setValidating(false);
+    setShowRegisterButton(false);
+    setApiMessage(null);
+  }, []);
+
+  // Handle username validation response
+  const handleCheckUsernameResponse = (response: CheckUsernameResponse) => {
+    console.log("response:: ", response);
+
+    if (typeof response?.available === "boolean") {
+      if (response.available) {
+        setApiMessage(USERNAMESTATUS.AVAILABLE);
+        setShowRegisterButton(true);
+      } else {
+        setApiMessage(USERNAMESTATUS.NOT_AVAILABLE);
+      }
+
+    } else {
+
+      setApiMessage(response.toString());
+      setShowRegisterButton(false);
+    }
   };
 
-  const registerUsername = async (username: string) => {
-    const response: RegisterResponse | undefined = await registerUser(username);
+  // Handle user registration response
+  const handleRegisterResponse = (response: RegisterResponse) => {
     if (response?.success) {
-      setAvailability(null);
-      setUsername("");
+      successAlert(response.message || "Successfully registered!");
+      clearValidation();
+      setUsername(""); // Clear username after registration
+    } else {
+      errorAlert(response.message || "Error registering user");
     }
+  };
+
+  const validateUsername = async () => {
+    setValidating(true);
+    const response = await checkUsername(username);
+    setValidating(false);
+    handleCheckUsernameResponse(response);
+  };
+
+  const registerUsername = async () => {
+    const response = await registerUser(username);
+    handleRegisterResponse(response);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value);
-    setAvailability(null);
+    setValidating(true);
+    setApiMessage(null);
   };
 
   return (
@@ -40,23 +99,15 @@ const App: React.FC = () => {
             placeholder="Enter desired username"
             className="w-full p-3 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
-          <button
-            onClick={() => validateUsername(username)}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-md transition duration-300 ease-in-out mb-4"
-          >
-            Check uniqueness
-          </button>
-          {availability && (
-            <p
-              className={`text-lg font-bold mb-4 text-center ${availability === "Available" ? "text-green-600" : "text-red-600"
-                }`}
-            >
-              {availability}
+          {apiMessage && (
+            <p className={`text-lg font-bold mb-4 text-center ${apiMessage === USERNAMESTATUS.AVAILABLE ? "text-green-600" : "text-red-600"}`}>
+              {apiMessage}
             </p>
           )}
-          {availability === "Available" && (
+          {validating && <Spinner />}
+          {showRegisterButton && (
             <button
-              onClick={() => registerUsername(username)}
+              onClick={registerUsername}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-md transition duration-300 ease-in-out"
             >
               Register
