@@ -21,9 +21,7 @@ export const checkUsername = async (username: string): Promise<CheckUsernameResp
 export const registerUser = async (username: string): Promise<RegisterResponse> => {
   const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username }),
   });
   return handleFetchResponse(response);

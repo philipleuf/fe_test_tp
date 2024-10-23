@@ -9,7 +9,6 @@ const App: React.FC = () => {
   const [username, setUsername] = useState<string>("");
   const [apiMessage, setApiMessage] = useState<string | null>(null);
   const [validating, setValidating] = useState<boolean>(false);
-  const [showRegisterButton, setShowRegisterButton] = useState<boolean>(false);
 
   /** Real time search and validation of username with debounce */
   useEffect(() => {
@@ -34,7 +33,6 @@ const App: React.FC = () => {
   // Clear validation and reset relevant state
   const clearValidation = useCallback(() => {
     setValidating(false);
-    setShowRegisterButton(false);
     setApiMessage(null);
   }, []);
 
@@ -42,12 +40,10 @@ const App: React.FC = () => {
   const handleCheckUsernameResponse = (response: CheckUsernameResponse) => {
     if (response.error) {
       setApiMessage(response.error);
-      setShowRegisterButton(false);
     }
     if (typeof response.available === "boolean") {
       const usernameAvailable = response.available === true;
       setApiMessage(usernameAvailable ? USERNAMESTATUS.AVAILABLE : USERNAMESTATUS.NOT_AVAILABLE);
-      setShowRegisterButton(usernameAvailable);
     }
   };
 
@@ -96,7 +92,7 @@ const App: React.FC = () => {
             </p>
           )}
           {validating && <Spinner />}
-          {showRegisterButton && (
+          {apiMessage === USERNAMESTATUS.AVAILABLE && (
             <button
               onClick={registerUsername}
               className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-md transition duration-300 ease-in-out"
